@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "satiator-types.h": "c",
+        "*.tcc": "c",
+        "cstdlib": "c"
+    }
+}

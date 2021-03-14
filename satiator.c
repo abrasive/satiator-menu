@@ -117,7 +117,7 @@ int s_seek(int fd, int offset, int whence) {
 // Read some data. Returns bytes read
 int s_read(int fd, void *buf, int len) {
     if (len > S_MAXBUF || len < 0)
-        return FR_INVALID_PARAMETER;
+        return -FR_INVALID_PARAMETER;
     simplecall(c_read, fd, 0, len);
     len = get_length();
     buffer_read(buf, len);
@@ -127,7 +127,7 @@ int s_read(int fd, void *buf, int len) {
 // Write some data. Returns bytes written
 int s_write(int fd, const void *buf, int len) {
     if (len > S_MAXBUF || len < 0)
-        return FR_INVALID_PARAMETER;
+        return -FR_INVALID_PARAMETER;
     buffer_write(buf, len);
     simplecall(c_write, fd, 0, len);
     return get_length();
@@ -152,7 +152,7 @@ int s_truncate(int fd) {
 int s_stat(const char *filename, s_stat_t *stat, int statsize) {
     int len;
     if (statsize < 9)
-        return FR_INVALID_PARAMETER;
+        return -FR_INVALID_PARAMETER;
     if (filename) {
         len = strlen(filename);
         buffer_write(filename, len);

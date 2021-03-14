@@ -39,16 +39,16 @@ void cdparse_set_error(const char *fmt, ...) {
 }
 
 int iso2desc(const char *infile, const char *outfile) {
-    FILE *out = fopen(outfile, "wb");
-    if (!out) {
-        cdparse_set_error("Can't open output file");
-        return -1;
-    }
 
     struct stat st;
     int ret = stat(infile, &st);
     if (ret < 0) {
         cdparse_set_error("Could not stat ISO file");
+        return -1;
+    }
+    FILE *out = fopen(outfile, "wb");
+    if (!out) {
+        cdparse_set_error("Can't open output file");
         return -1;
     }
 

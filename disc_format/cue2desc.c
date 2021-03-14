@@ -202,8 +202,10 @@ static cue2desc_error_t handle_file(char *params) {
     int ret = stat(filename, &st);
     if (ret < 0) {
         cdparse_set_error("Could not stat track file '%s'", filename);
+        free(filename);
         return e_bad_track_file;
     }
+    free(filename);
 
     cur_filesize = st.st_size;
 
@@ -328,6 +330,7 @@ static cue2desc_error_t handle_wave_track(segment_t *seg) {
         fseek(f, htole32(buf[1]), SEEK_CUR);
         fread(&buf, sizeof(buf), 1, f);
         if (feof(f)) {
+            fclose(f);
             cdparse_set_error("Reached end of '%s' while looking for data chunk", fname);
             return e_bad_track_file;
         }
