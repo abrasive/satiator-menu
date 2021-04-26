@@ -1,0 +1,75 @@
+name: Build
+
+on: [push, pull_request]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check out satiator-menu
+      # user/org needs to have a fork of iapetus as submodule is defined as ../iapetus.git
+      uses: actions/checkout@v2
+      with:
+        path: satiator-menu
+        submodules: true
+    - name: Check out toolchain
+      uses: actions/checkout@v2
+      with:
+        repository: miracoli/Saturn-SDK-GCC-SH2
+        path: Saturn-SDK-GCC-SH2
+    - name: Get toolchain commit
+      run: echo "toolchaincommit=$(git rev-parse HEAD)" >> $GITHUB_ENV
+      working-directory: Saturn-SDK-GCC-SH2
+    - name: Restore cached toolchain
+      uses: actions/cache@v2
+      id: toolchaincache
+      with:
+        path: Saturn-SDK-GCC-SH2/toolchain
+        key: toolchain-${{ env.toolchaincommit }}
+    - name: Build toolchain
+      # Only build if we don't have a cached version
+      if: steps.toolchaincache.outputs.cache-hit != 'true'
+      # based on https://github.com/miracoli/Saturn-SDK-GCC-SH2/blob/master/.github/workflows/build.yml
+      # manual install of automake 1.16 only required on ubuntu < 20.04
+      run: |
+        if [ "$RUNNER_OS" == "macOS" ]; then
+              brew install coreutils
+        fi
+        echo SRCDIR $SRCDIR BUILDDIR $BUILDDIR TARGETMACH $TARGETMACH BUILDMACH $BUILDMACH HOSTMACH $HOSTMACH INSTALLDIR $INSTALLDIR SYSROOTDIR $SYSROOTDIR ROOTDIR $ROOTDIR DOWNLOADDIR $DOWNLOADDIR PROGRAM_PREFIX $PROGRAM_PREFIX
+        wget http://ftp.br.debian.org/debian/pool/main/a/automake-1.16/automake_1.16.1-4_all.deb
+        sudo apt-get -y install ./automake_1.16.1-4_all.deb
+        sudo apt-get -y install automake autoconf autoconf-archive autotools-dev bison texinfo
+        ./build-elf.sh
+      working-directory: Saturn-SDK-GCC-SH2
+      env: 
+        SRCDIR: ${{ github.workspace }}/Saturn-SDK-GCC-SH2/source
+        BUILDDIR:  ${{ github.workspace }}/Saturn-SDK-GCC-SH2/build
+        TARGETMACH: sh-elf
+        BUILDMACH: x86_64-pc-linux-gnu
+        HOSTMACH: x86_64-pc-linux-gnu
+        INSTALLDIR:  ${{ github.workspace }}/Saturn-SDK-GCC-SH2/toolchain
+        SYSROOTDIR: ${{ github.workspace }}/Saturn-SDK-GCC-SH2/toolchain/sysroot
+        ROOTDIR:  ${{ github.workspace }}
+        DOWNLOADDIR:  ${{ github.workspace }}/Saturn-SDK-GCC-SH2/download
+        PROGRAM_PREFIX: sh-none-
+        NCPU: 2
+    - name: Add toolchain to path
+      run: echo '${{ github.workspace }}/Saturn-SDK-GCC-SH2/toolchain/bin' >> $GITHUB_PATH
+    - name: Build satiator-menu
+      run: |
+        sudo apt-get -y install cmake
+        make
+      working-directory: satiator-menu
+    - name: Upload config.log artifact
+      uses: actions/upload-artifact@v2
+      if: ${{ failure() }}
+      with:
+        name: configlogs
+        path: '**/config.log'
+    - name: Upload menu.bin artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: menu.bin
+        path: satiator-menu/out/menu.bin
