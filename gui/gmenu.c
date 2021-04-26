@@ -330,9 +330,9 @@ again:
 move:
 
     if (selected >= n_entries)
-        selected = n_entries - 1;
-    if (selected < 0)
         selected = 0;
+    if (selected < 0)
+        selected = n_entries - 1;
     while (selected - scrollbase < SCROLL_OFF && scrollbase > 0) {
         scrollbase--;
         write_string(scrollbase, x_text, entries[scrollbase].name);
